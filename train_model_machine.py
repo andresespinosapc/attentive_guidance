@@ -1,3 +1,6 @@
+from comet_ml import Experiment
+from callbacks import CometLogger
+
 import os
 import argparse
 import logging
@@ -21,6 +24,51 @@ from decoder import DecoderRNN
 from loss import AttentionLoss
 from fields import AttentionField
 
+comet_args = {
+    'api_key': '3CY3z4b2eYk08ZWoVOW912Yfl',
+    'project_name': 'attentive-guidance',
+    'workspace': 'andresespinosapc',
+}
+if os.environ.get('COMET_DISABLE'):
+    comet_args['disabled'] = True
+    comet_args['api_key'] = ''
+experiment = Experiment(**comet_args)
+
+def log_comet_parameters(opt):
+    opt_dict = vars(opt)
+    for key in opt_dict.keys():
+        experiment.log_parameter(key, opt_dict[key])
+
+TASK_DEFAULT_PARAMS = {
+    'task_defaults': {
+        'batch_size': 128,
+        'k': 3,
+        'max_len': 60,
+        'patience': 5,
+        'epochs': 20,
+    },
+    'baseline_2018': {
+        'full_focus': False,
+        'batch_size': 1,
+        'embedding_size': 128,
+        'hidden_size': 512,
+        'rnn_cell': 'gru',
+        'attention': 'pre-rnn',
+        'attention_method': 'mlp',
+        'max_len': 50,
+    },
+    'Hupkes_2018': {
+        'full_focus': True,
+        'batch_size': 1,
+        'embedding_size': 16,
+        'hidden_size': 512,
+        'rnn_cell': 'gru',
+        'attention': 'pre-rnn',
+        'attention_method': 'mlp',
+        'max_len': 50,
+    }
+}
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 try:
@@ -38,6 +86,7 @@ def train_model():
     parser = init_argparser()
     opt = parser.parse_args()
     opt = validate_options(parser, opt)
+    log_comet_parameters(opt)
 
     # Prepare logging and data set
     init_logging(opt)
@@ -70,7 +119,8 @@ def train_model():
                                   teacher_forcing_ratio=opt.teacher_forcing_ratio, learning_rate=opt.lr,
                                   resume_training=opt.resume_training, checkpoint_path=checkpoint_path,
                                   losses=losses, metrics=metrics, loss_weights=loss_weights,
-                                  checkpoint_every=opt.save_every, print_every=opt.print_every)
+                                  checkpoint_every=opt.save_every, print_every=opt.print_every,
+                                  custom_callbacks=[CometLogger(experiment)])
 
     if opt.write_logs:
         output_path = os.path.join(opt.output_dir, opt.write_logs)
@@ -79,6 +129,10 @@ def train_model():
 
 def init_argparser():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--task', type=str, choices=['lookup', 'symbol_rewriting', 'SCAN'], default='lookup')
+    parser.add_argument('--default_params_key', type=str, choices=['task_defaults', 'baseline_2018', 'Hupkes_2018'], default='task_defaults')
+    parser.add_argument('--test_path_index', type=int, default=0)
 
     # Model arguments
     parser.add_argument('--train', help='Training data')
@@ -199,33 +253,17 @@ def prepare_iters(opt):
     def len_filter(example):
         return len(example.src) <= max_len and len(example.tgt) <= max_len
 
-    lookup_task = get_task('lookup')
-    print('lookup task:', lookup_task.train_path)
-    opt.train = lookup_task.train_path
-    opt.dev = lookup_task.test_paths[0]
-    params_key = 'baseline_2018'
-    default_params = {
-        'baseline_2018': {
-            'full_focus': False,
-            'batch_size': 1,
-            'embedding_size': 128,
-            'hidden_size': 512,
-            'rnn_cell': 'gru',
-            'attention': 'pre-rnn',
-            'attention_method': 'mlp',
-            'max_len': 50,
-        }
-    }
-    opt.full_focus = default_params[params_key]['full_focus']
-    opt.batch_size = default_params[params_key]['batch_size']
-    opt.embedding_size = default_params[params_key]['embedding_size']
-    opt.hidden_size = default_params[params_key]['hidden_size']
-    opt.rnn_cell = default_params[params_key]['rnn_cell']
-    opt.attention = default_params[params_key]['attention']
-    opt.attention_method = default_params[params_key]['attention_method']
-    opt.max_len = default_params[params_key]['max_len']
-
-    opt.metrics = ['word_acc', 'seq_acc', 'target_acc']
+    task = get_task(opt.task)
+    opt.train = task.train_path
+    opt.dev = task.test_paths[opt.test_path_index]
+    opt.full_focus = TASK_DEFAULT_PARAMS[opt.default_params_key]['full_focus']
+    opt.batch_size = TASK_DEFAULT_PARAMS[opt.default_params_key]['batch_size']
+    opt.embedding_size = TASK_DEFAULT_PARAMS[opt.default_params_key]['embedding_size']
+    opt.hidden_size = TASK_DEFAULT_PARAMS[opt.default_params_key]['hidden_size']
+    opt.rnn_cell = TASK_DEFAULT_PARAMS[opt.default_params_key]['rnn_cell']
+    opt.attention = TASK_DEFAULT_PARAMS[opt.default_params_key]['attention']
+    opt.attention_method = TASK_DEFAULT_PARAMS[opt.default_params_key]['attention_method']
+    opt.max_len = TASK_DEFAULT_PARAMS[opt.default_params_key]['max_len']
 
     # generate training and testing data
     train = get_standard_iter(torchtext.data.TabularDataset(
