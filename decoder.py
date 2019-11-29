@@ -56,6 +56,9 @@ class DecoderRNN(Decoder):
           representing lengths of output sequences, *KEY_SEQUENCE* : list of sequences, where each sequence is a list of
           predicted token IDs }.
     """
+
+    KEY_ENCODER_HIDDEN = 'encoder_hidden'
+
     def __init__(self, vocab_size, max_len, hidden_size,
             sos_id, eos_id,
             n_layers=1, rnn_cell='gru', bidirectional=False,
@@ -111,6 +114,7 @@ class DecoderRNN(Decoder):
 
 
         ret_dict = dict()
+        ret_dict[DecoderRNN.KEY_ENCODER_HIDDEN] = encoder_hidden
         if self.use_attention:
             ret_dict[DecoderRNN.KEY_ATTN_SCORE] = list()
 

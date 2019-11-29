@@ -21,7 +21,7 @@ from machine.tasks import get_task
 from trainer import AttentionTrainer
 from decoder import DecoderRNN
 
-from loss import AttentionLoss
+from loss import AttentionLoss, L1Loss
 from fields import AttentionField
 
 comet_args = {
@@ -200,7 +200,9 @@ def init_argparser():
         '--write-logs', help='Specify file to write logs to after training')
     parser.add_argument('--cuda_device', default=0,
                         type=int, help='set cuda device to use')
+    parser.add_argument('--l1_loss', type=str, choices=['encoder_hidden'], default=None)
     parser.add_argument('--use_attention_loss', action='store_true')
+    parser.add_argument('--scale_l1_loss', type=float, default=1.)
     parser.add_argument('--scale_attention_loss', type=float, default=1.)
     parser.add_argument('--xent_loss', type=float, default=1.)
 
@@ -354,6 +356,11 @@ def prepare_losses_and_metrics(
     losses = [NLLLoss(ignore_index=pad)]
     # loss_weights = [1.]
     loss_weights = [float(opt.xent_loss)]
+
+    if opt.l1_loss:
+        if opt.l1_loss == 'encoder_hidden':
+            losses.append(L1Loss())
+        loss_weights.append(opt.scale_l1_loss)
 
     if opt.use_attention_loss:
         losses.append(AttentionLoss(ignore_index=IGNORE_INDEX))
