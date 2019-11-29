@@ -5,6 +5,9 @@ import os
 import argparse
 import logging
 
+import random
+import numpy as np
+
 import torch
 import torchtext
 from collections import OrderedDict
@@ -88,6 +91,14 @@ def train_model():
     opt = validate_options(parser, opt)
     log_comet_parameters(opt)
 
+    # Set random seed
+    if opt.random_seed:
+        random.seed(opt.random_seed)
+        np.random.seed(opt.random_seed)
+        torch.manual_seed(opt.random_seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(opt.random_seed)
+
     # Prepare logging and data set
     init_logging(opt)
     src, tgt, train, dev, monitor_data = prepare_iters(opt)
@@ -120,7 +131,8 @@ def train_model():
                                   resume_training=opt.resume_training, checkpoint_path=checkpoint_path,
                                   losses=losses, metrics=metrics, loss_weights=loss_weights,
                                   checkpoint_every=opt.save_every, print_every=opt.print_every,
-                                  custom_callbacks=[CometLogger(experiment)])
+                                  custom_callbacks=[CometLogger(experiment)],
+                                  random_seed=opt.random_seed)
 
     if opt.write_logs:
         output_path = os.path.join(opt.output_dir, opt.write_logs)
@@ -135,6 +147,7 @@ def init_argparser():
     parser.add_argument('--test_path_index', type=int, default=0)
 
     # Model arguments
+    parser.add_argument('--random_seed', type=int, default=None)
     parser.add_argument('--train', help='Training data')
     parser.add_argument('--dev', help='Development data')
     parser.add_argument('--monitor', nargs='+', default=[],
