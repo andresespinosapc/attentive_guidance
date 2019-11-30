@@ -13,7 +13,7 @@ import torchtext
 from collections import OrderedDict
 
 from machine.trainer import SupervisedTrainer
-from machine.models import EncoderRNN, Seq2seq
+from machine.models import EncoderRNN
 from machine.loss import NLLLoss
 from machine.metrics import WordAccuracy, SequenceAccuracy, FinalTargetAccuracy, SymbolRewritingAccuracy, BLEU
 from machine.dataset import SourceField, TargetField
@@ -22,7 +22,7 @@ from machine.dataset.get_standard_iter import get_standard_iter
 from machine.tasks import get_task
 
 from trainer import AttentionTrainer
-from decoder import DecoderRNN
+from models import DecoderRNN, Seq2seq
 
 from loss import AttentionLoss, L1Loss
 from fields import AttentionField
@@ -213,7 +213,8 @@ def init_argparser():
         '--write-logs', help='Specify file to write logs to after training')
     parser.add_argument('--cuda_device', default=0,
                         type=int, help='set cuda device to use')
-    parser.add_argument('--l1_loss', type=str, choices=['encoder_hidden'], default=None)
+    parser.add_argument('--l1_loss_inputs', type=str, nargs='*',
+        choices=['encoder_hidden', 'model_parameters'], default=[])
     parser.add_argument('--use_attention_loss', action='store_true')
     parser.add_argument('--scale_l1_loss', type=float, default=1.)
     parser.add_argument('--scale_attention_loss', type=float, default=1.)
@@ -376,9 +377,8 @@ def prepare_losses_and_metrics(
     # loss_weights = [1.]
     loss_weights = [float(opt.xent_loss)]
 
-    if opt.l1_loss:
-        if opt.l1_loss == 'encoder_hidden':
-            losses.append(L1Loss())
+    for l1_loss_input in opt.l1_loss_inputs:
+        losses.append(L1Loss(input_name=l1_loss_input))
         loss_weights.append(opt.scale_l1_loss)
 
     if opt.use_attention_loss:

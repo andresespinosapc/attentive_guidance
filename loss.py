@@ -23,14 +23,10 @@ class AttentionLoss(NLLLoss):
 
 
 class L1Loss(Loss):
-    _NAME = "L1 Loss"
-    _SHORTNAME = "l1_loss"
-    _INPUTS = "encoder_hidden"
-
-    def __init__(self):
-        self.name = self._NAME
-        self.log_name = self._SHORTNAME
-        self.inputs = self._INPUTS
+    def __init__(self, input_name='encoding_hidden'):
+        self.name = 'L1 %s Loss' % (input_name)
+        self.log_name = 'l1_%s_loss' % (input_name)
+        self.inputs = input_name
         self.acc_loss = 0
         self.norm_term = 0
         self.criterion = torch.tensor([])
@@ -43,6 +39,11 @@ class L1Loss(Loss):
 
     def eval_batch(self, decoder_outputs, other, target_variable):
         outputs = other[self.inputs]
-        batch_size = outputs.size(0)
-        self.acc_loss += outputs.abs().sum()
-        self.norm_term += batch_size
+        if self.inputs == 'model_parameters':
+            for parameter in outputs:
+                self.acc_loss += parameter.abs().sum()
+                self.norm_term += 1
+        else:
+            batch_size = outputs.size(0)
+            self.acc_loss += outputs.abs().sum()
+            self.norm_term += batch_size
