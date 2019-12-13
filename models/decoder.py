@@ -62,11 +62,18 @@ class DecoderRNN(Decoder):
     def __init__(self, vocab_size, max_len, hidden_size,
             sos_id, eos_id,
             n_layers=1, rnn_cell='gru', bidirectional=False,
-            input_dropout_p=0, dropout_p=0, use_attention=False, attention_method=None, full_focus=False):
+            input_dropout_p=0, dropout_p=0, use_attention=False, attention_method=None, full_focus=False,
+            use_k_sparsity=False, initial_k_sparsity=100, k_sparsity_layers=None):
 
         super(DecoderRNN, self).__init__(vocab_size, max_len, hidden_size,
                 input_dropout_p, dropout_p,
                 n_layers, rnn_cell)
+
+        if use_k_sparsity and k_sparsity_layers is None:
+            raise ValueError('To use k_sparsity you must specify at least one k_sparsity_layer')
+        self.use_k_sparsity = use_k_sparsity
+        self.k_sparsity = initial_k_sparsity
+        self.k_sparsity_layers = k_sparsity_layers
 
         self.bidirectional_encoder = bidirectional
         input_size = hidden_size
@@ -121,6 +128,12 @@ class DecoderRNN(Decoder):
         inputs, batch_size, max_length = self._validate_args(inputs, encoder_hidden, encoder_outputs,
                                                              function, teacher_forcing_ratio)
         
+        if self.use_k_sparsity and 'encoder_hidden' in self.k_sparsity_layers:
+            indices = encoder_hidden.topk(self.k_sparsity)[1]
+            mask = torch.zeros(encoder_hidden.shape)
+            mask = mask.scatter_(-1, indices, 1).bool()
+            encoder_hidden = encoder_hidden * mask
+
         decoder_hidden = self._init_state(encoder_hidden)
 
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False

@@ -145,6 +145,9 @@ def init_argparser():
     parser.add_argument('--task', type=str, choices=['lookup', 'symbol_rewriting', 'SCAN'], default='lookup')
     parser.add_argument('--default_params_key', type=str, choices=['task_defaults', 'baseline_2018', 'Hupkes_2018'], default='task_defaults')
     parser.add_argument('--test_name', type=str, default='heldout_tables')
+    parser.add_argument('--use_k_sparsity', action='store_true')
+    parser.add_argument('--initial_k_sparsity', type=int, default=100)
+    parser.add_argument('--k_sparsity_layers', type=str, nargs='*', choices=['encoder_hidden'])
 
     # Model arguments
     parser.add_argument('--random_seed', type=int, default=None)
@@ -355,7 +358,10 @@ def initialize_model(opt, src, tgt, train):
                          full_focus=opt.full_focus,
                          bidirectional=opt.bidirectional,
                          rnn_cell=opt.rnn_cell,
-                         eos_id=tgt.eos_id, sos_id=tgt.sos_id)
+                         eos_id=tgt.eos_id, sos_id=tgt.sos_id,
+                         use_k_sparsity=opt.use_k_sparsity,
+                         initial_k_sparsity=opt.initial_k_sparsity,
+                         k_sparsity_layers=opt.k_sparsity_layers,)
     seq2seq = Seq2seq(encoder, decoder)
 
     # This enables using all GPUs available
