@@ -1,3 +1,7 @@
+# Slurm
+job*
+slurm*
+
 *.pt
 *.pyc
 *.swp
