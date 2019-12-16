@@ -25,7 +25,7 @@ class CometLogger(Callback):
 
 class KSParsityDecreaser(Callback):
     def __init__(self, model, comet_experiment,
-        factor=0.9, patience=5, metric='seq_acc',
+        factor=0.9, patience=20, metric='seq_acc',
     ):
         super().__init__()
 
@@ -44,10 +44,11 @@ class KSParsityDecreaser(Callback):
         if metric_val <= self.best:
             self.num_bad_epochs += 1
         else:
+            self.num_bad_epochs = 0
             self.best = metric_val
 
         if self.num_bad_epochs >= self.patience:
-            self.model.k_sparsity *= self.factor
+            self.model.k_sparsity = int(self.factor * self.model.k_sparsity)
             self.num_bad_epochs = 0
 
         metrics = {
