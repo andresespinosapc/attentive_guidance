@@ -128,11 +128,17 @@ class DecoderRNN(Decoder):
         inputs, batch_size, max_length = self._validate_args(inputs, encoder_hidden, encoder_outputs,
                                                              function, teacher_forcing_ratio)
         
-        if self.use_k_sparsity and 'encoder_hidden' in self.k_sparsity_layers:
-            indices = encoder_hidden.topk(self.k_sparsity)[1]
-            mask = torch.zeros(encoder_hidden.shape).to(device)
-            mask = mask.scatter_(-1, indices, 1)
-            encoder_hidden = encoder_hidden * mask
+        if self.use_k_sparsity:
+            if 'encoder_hidden' in self.k_sparsity_layers:
+                indices = encoder_hidden.topk(self.k_sparsity)[1]
+                mask = torch.zeros(encoder_hidden.shape).to(device)
+                mask = mask.scatter_(-1, indices, 1)
+                encoder_hidden = encoder_hidden * mask
+            elif 'encoder_outputs' in self.k_sparsity_layers:
+                indices = encoder_outputs.topk(self.k_sparsity)[1]
+                mask = torch.zeros(encoder_outputs.shape).to(device)
+                mask = mask.scatter_(-1, indices, 1)
+                encoder_outputs = encoder_outputs * mask
 
         decoder_hidden = self._init_state(encoder_hidden)
 

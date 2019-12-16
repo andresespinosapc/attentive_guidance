@@ -150,7 +150,7 @@ def init_argparser():
     parser.add_argument('--test_name', type=str, default='heldout_tables')
     parser.add_argument('--use_k_sparsity', action='store_true')
     parser.add_argument('--initial_k_sparsity', type=int, default=100)
-    parser.add_argument('--k_sparsity_layers', type=str, nargs='*', choices=['encoder_hidden'])
+    parser.add_argument('--k_sparsity_layers', type=str, nargs='*', choices=['encoder_hidden', 'encoder_outputs'])
 
     # Model arguments
     parser.add_argument('--random_seed', type=int, default=None)
