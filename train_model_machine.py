@@ -1,5 +1,5 @@
 from comet_ml import Experiment
-from callbacks import CometLogger
+from callbacks import CometLogger, KSParsityDecreaser
 
 import os
 import argparse
@@ -131,7 +131,10 @@ def train_model():
                                   resume_training=opt.resume_training, checkpoint_path=checkpoint_path,
                                   losses=losses, metrics=metrics, loss_weights=loss_weights,
                                   checkpoint_every=opt.save_every, print_every=opt.print_every,
-                                  custom_callbacks=[CometLogger(experiment)],
+                                  custom_callbacks=[
+                                      CometLogger(experiment),
+                                      KSParsityDecreaser(seq2seq.decoder_module, experiment),
+                                    ],
                                   random_seed=opt.random_seed)
 
     if opt.write_logs:
