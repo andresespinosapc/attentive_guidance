@@ -130,12 +130,12 @@ class DecoderRNN(Decoder):
         
         if self.use_k_sparsity:
             if 'encoder_hidden' in self.k_sparsity_layers:
-                indices = encoder_hidden.topk(self.k_sparsity)[1]
+                indices = encoder_hidden.abs().topk(self.k_sparsity)[1]
                 mask = torch.zeros(encoder_hidden.shape).to(device)
                 mask = mask.scatter_(-1, indices, 1)
                 encoder_hidden = encoder_hidden * mask
             elif 'encoder_outputs' in self.k_sparsity_layers:
-                indices = encoder_outputs.topk(self.k_sparsity)[1]
+                indices = encoder_outputs.abs().topk(self.k_sparsity)[1]
                 mask = torch.zeros(encoder_outputs.shape).to(device)
                 mask = mask.scatter_(-1, indices, 1)
                 encoder_outputs = encoder_outputs * mask
