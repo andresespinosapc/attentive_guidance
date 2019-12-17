@@ -277,13 +277,15 @@ def prepare_iters(opt):
 
     task = get_task(opt.task)
     opt.train = task.train_path
-    dev_paths = list(filter(lambda x: opt.test_name in x, task.test_paths))
-    if len(dev_paths) <= 0:
-        raise ValueError('Test data with name %s not found' % (opt.test_name))
-    elif len(dev_paths) == 1:
-        opt.dev = dev_paths[0]
-    else:
-        raise ValueError('More than one test data with name %s was found' % (opt.test_name))
+    opt.dev = task.valid_path
+    opt.monitor = task.test_paths
+    # dev_paths = list(filter(lambda x: opt.test_name in x, task.test_paths))
+    # if len(dev_paths) <= 0:
+    #     raise ValueError('Test data with name %s not found' % (opt.test_name))
+    # elif len(dev_paths) == 1:
+    #     opt.dev = dev_paths[0]
+    # else:
+    #     raise ValueError('More than one test data with name %s was found' % (opt.test_name))
     opt.full_focus = TASK_DEFAULT_PARAMS[opt.default_params_key]['full_focus']
     opt.batch_size = TASK_DEFAULT_PARAMS[opt.default_params_key]['batch_size']
     opt.embedding_size = TASK_DEFAULT_PARAMS[opt.default_params_key]['embedding_size']
