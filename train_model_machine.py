@@ -220,7 +220,7 @@ def init_argparser():
     parser.add_argument('--cuda_device', default=0,
                         type=int, help='set cuda device to use')
     parser.add_argument('--l1_loss_inputs', type=str, nargs='*',
-        choices=['encoder_hidden', 'model_parameters'], default=[])
+        choices=['encoder_hidden', 'encoder_outputs', 'model_parameters'], default=[])
     parser.add_argument('--use_attention_loss', action='store_true')
     parser.add_argument('--scale_l1_loss', type=float, default=1.)
     parser.add_argument('--scale_attention_loss', type=float, default=1.)

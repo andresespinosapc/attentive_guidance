@@ -58,6 +58,7 @@ class DecoderRNN(Decoder):
     """
 
     KEY_ENCODER_HIDDEN = 'encoder_hidden'
+    KEY_ENCODER_OUTPUTS = 'encoder_outputs'
 
     def __init__(self, vocab_size, max_len, hidden_size,
             sos_id, eos_id,
@@ -122,6 +123,7 @@ class DecoderRNN(Decoder):
 
         ret_dict = dict()
         ret_dict[DecoderRNN.KEY_ENCODER_HIDDEN] = encoder_hidden
+        ret_dict[DecoderRNN.KEY_ENCODER_OUTPUTS] = encoder_outputs
         if self.use_attention:
             ret_dict[DecoderRNN.KEY_ATTN_SCORE] = list()
 
